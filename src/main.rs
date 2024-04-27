@@ -1,5 +1,5 @@
-use std::{collections::{HashMap, HashSet, VecDeque}, fs, time::SystemTime};
-use rand::seq::SliceRandom;
+use std::{collections::{HashMap, HashSet}, fs};
+use rand::prelude::SliceRandom;
 
 #[derive(Debug)]
 struct Graph {
@@ -18,10 +18,10 @@ impl Graph {
 
     fn breadth_first_search(&self, node: &str, depth: usize) -> HashSet<String> {
         let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        queue.push_back((node.to_string(), 0));
+        let mut queue = Vec::new();
+        queue.push((node.to_string(), 0));
     
-        while let Some((current_node, current_depth)) = queue.pop_front() {
+        while let Some((current_node, current_depth)) = queue.pop() {
             if visited.contains(&current_node) || current_depth >= depth {
                 continue;
             }
@@ -30,7 +30,7 @@ impl Graph {
             if let Some(neighbors) = self.adjacency_list.get(&current_node) {
                 for neighbor in neighbors {
                     if !visited.contains(neighbor) {
-                        queue.push_back((neighbor.clone(), current_depth + 1));
+                        queue.push((neighbor.clone(), current_depth + 1));
                     }
                 }
             }
@@ -41,9 +41,9 @@ impl Graph {
     fn sample_random_nodes(&self, num_nodes: usize) -> Vec<String> {
         let mut rng = rand::thread_rng();
         let keys: Vec<_> = self.adjacency_list.keys().cloned().collect();
-        let mut shuffled_keys = keys.clone();
+        let mut shuffled_keys: Vec<String> = keys.choose_multiple(&mut rng, num_nodes).cloned().collect();
         shuffled_keys.shuffle(&mut rng);
-        shuffled_keys.into_iter().take(num_nodes).collect()
+        shuffled_keys
     }
 }
 
@@ -58,34 +58,53 @@ fn load_dataset(filename: &str) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let total_nodes = graph.adjacency_list.len().min(1_000); 
+    let total_nodes = graph.adjacency_list.len(); 
     let batch_size = 100;
-    let num_batches = (total_nodes as f64 / batch_size as f64).ceil() as usize;
+    
+    let mut distance_map: HashMap<&String, Vec<f64>> = HashMap::new();
+    let random_nodes = graph.sample_random_nodes(batch_size);
 
-    let (mut total_overlap, mut total_followers) = (0, 0);
+    for depth in 2..=4 {
+        //let (mut total_overlap, mut total_followers) = (0, 0);
+        println!("{:?}", distance_map);
 
-    for _ in 0..num_batches {
-        let random_nodes = graph.sample_random_nodes(batch_size);
-        for node in random_nodes {
-            let direct_friends = graph.adjacency_list.get(&node).unwrap_or(&HashSet::new()).clone();
-            let friends_of_friends = graph.breadth_first_search(&node, 2);
+        for node in &random_nodes {
+            //let direct_friends = graph.adjacency_list.get(&node).unwrap_or(&HashSet::new()).clone();
+            let friends_of_friends = graph.breadth_first_search(&node, depth);
+            let proportion =  friends_of_friends.len() as f64/total_nodes as f64;
+            println!("{}", proportion);
+            if let Some(proportions) = distance_map.get_mut(node) {
+                proportions.push(proportion);
+                
+            } else {
+                let initialized_proportions = vec![proportion];
+                distance_map.insert(node, initialized_proportions);
 
-            total_overlap += direct_friends.intersection(&friends_of_friends).count();
-            total_followers += friends_of_friends.len();
+            }
+
+
+            //println!("{:?}",friends_of_friends);
+
+            //total_overlap += direct_friends.intersection(&friends_of_friends).count();
+            //println!("total overlap: {}", total_overlap);
+            //total_followers += friends_of_friends.len();
+            //println!("total followers: {}", total_followers);
+
         }
+
+    //let average_overlap = if total_followers > 0 { total_overlap as f64 / total_followers as f64 } else { 0.0 };
+    //println!("Average overlap at depth {}: {:.2}", depth, average_overlap);
     }
 
-    let average_overlap = if total_followers > 0 { total_overlap as f64 / total_followers as f64 } else { 0.0 };
-    println!("Average overlap: {:.2}", average_overlap);
-
+    for(key, value) in &distance_map {
+        println!("Node: {}, Proportions: {:?}", key, value)
+    }
     Ok(())
 }
 
 
 fn main() {
-    let start_time = SystemTime::now();
     if let Err(err) = load_dataset("higgs_social_network.edgelist") {
         eprintln!("Error loading dataset: {}", err);
     }
-    println!("Total time taken: {:?}", start_time.elapsed().unwrap());
 }
