@@ -13,7 +13,6 @@ name = "finalproject"
 version = "0.1.0"
 dependencies = [
  "rand",
- "statistics",
 ]
 
 [[package]]
@@ -68,12 +67,6 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom",
 ]
-
-[[package]]
-name = "statistics"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f4628c807954468b720f27d8863a5447d328378cbb874d633f6c4e952073acf"
 
 [[package]]
 name = "wasi"

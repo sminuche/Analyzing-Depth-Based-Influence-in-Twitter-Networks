@@ -24,13 +24,19 @@ pub fn load_dataset(filename: &str) -> Result<(), Box<dyn Error>> {
     }
 
     let total_nodes = graph.adjacency_list.len();
-    let batch_size = 100;
+    let batch_size = 1700;
 
     let distance_map = compute_distance_map(&graph, total_nodes, batch_size);
 
     let max_vector = find_max_proportions(&distance_map);
 
     print_best_nodes(max_vector);
+
+    for depth in 1..=6 {
+        let average_coverage = find_stats(&distance_map, depth);
+        println!("Average proportion of the dataset covered by nodes at depth {}: {:.2}%", depth, average_coverage); 
+    }
+
     Ok(())
 }
 
@@ -76,4 +82,15 @@ pub fn find_max_proportions(distance_map: &HashMap<String, Vec<f64>>) -> Vec<(us
     }
 
     max_vector
+}
+
+fn find_stats(distance_map: &HashMap<String, Vec<f64>>, level:usize) -> f64 {
+    let mut sum = 0.0;
+    let mut count = 0.0;
+    for (_, v) in distance_map.iter() {
+        sum += v[level-1];
+        count += 1.0;
+    }
+    let average: f64 = (sum/count) * 100.0;
+    return average;
 }

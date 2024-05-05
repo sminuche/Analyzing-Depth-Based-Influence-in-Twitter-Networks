@@ -1,6 +1,5 @@
 mod data_processing;
 mod graph;
-mod stats;
 
 use data_processing::load_dataset;
 
@@ -76,16 +75,11 @@ mod tests {
 }
 
 fn main() {
-    if let Err(err) = load_dataset("higgs_social_network.edgelist") {
+    let filename = "higgs_social_network.edgelist";
+
+    if let Err(err) = load_dataset(filename) {
         eprintln!("Error loading dataset: {}", err);
     }
 
-    if let Some((mean_value, std_value)) =
-        stats::calculate_statistics_from_file("higgs_social_network.edgelist")
-    {
-        println!("Mean: {:.2}", mean_value);
-        println!("Standard Deviation: {:.2}", std_value);
-    } else {
-        println!("Failed to calculate statistics.");
-    }
+
 }

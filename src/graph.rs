@@ -18,7 +18,7 @@ impl Graph {
         self.add_single_edge(node2, node1);
     }
 
-    fn add_single_edge(&mut self, from: String, to: String) {
+    pub fn add_single_edge(&mut self, from: String, to: String) {
         self.adjacency_list
             .entry(from)
             .or_insert_with(HashSet::new)
